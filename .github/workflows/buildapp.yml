@@ -73,15 +73,22 @@ jobs:
           cache-name: iOS-17.5-SDK
         with:
           path: theos/sdks/
-          key: ${{ env.cache-name }}
+          key: ${{ env.cache-name }}-${{ runner.os }}
 
       - name: Download iOS 17.5 SDK
         if: steps.SDK.outputs.cache-hit != 'true'
         run: |
-          git clone -n --depth=1 --filter=tree:0 https://github.com/arichornlover/sdks.git && cd sdks
-          git sparse-checkout set --no-cone iPhoneOS16.4.sdk
+          mkdir -p "$THEOS/sdks"
+          # clone into a temporary folder, enable sparse-checkout and pull only the 17.5 SDK
+          git clone -n --depth=1 --filter=tree:0 https://github.com/arichornlover/sdks.git sdks
+          cd sdks
+          git sparse-checkout init --no-cone
+          git sparse-checkout set iPhoneOS17.5.sdk
           git checkout
-          mv *.sdk $THEOS/sdks
+          mv iPhoneOS17.5.sdk "$THEOS/sdks/"
+          # sanity check
+          echo "Contents of $THEOS/sdks:"
+          ls -la "$THEOS/sdks"
         env:
           THEOS: ${{ github.workspace }}/theos
 
@@ -154,3 +161,4 @@ jobs:
           name: v${{ env.YOUTUBE_VERSION }}-${{ env.REBORN_VERSION }}-(${{ github.run_number }})
           files: main/packages/*.ipa
           draft: ${{ env.DRAFT }}
+
